@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Gabarito Deck Offline</title>
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --red: #dc2626;
+      --red-soft: #fee2e2;
+      --yellow: #f59e0b;
+      --yellow-soft: #fef3c7;
+      --shadow: 0 18px 55px rgba(15, 23, 42, .10);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 52%, #eef2f7 100%);
+      color: var(--text);
+    }
+
+    button, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+
+    #app {
+      width: min(980px, 100%);
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .screen {
+      min-height: calc(100vh - 28px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 44px;
+    }
+
+    .title-block { min-width: 0; }
+    .title {
+      margin: 0;
+      font-size: clamp(1.25rem, 3.2vw, 2.25rem);
+      letter-spacing: -.055em;
+      line-height: .98;
+      font-weight: 950;
+    }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: .92rem; font-weight: 650; }
+
+    .card {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(226,232,240,.92);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: clamp(16px, 3vw, 28px);
+    }
+
+    .stack { display: flex; flex-direction: column; gap: 12px; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .grow { flex: 1; }
+    .muted { color: var(--muted); }
+    .tiny { font-size: .78rem; color: var(--muted); }
+
+    .btn {
+      border: 0;
+      border-radius: 18px;
+      min-height: 52px;
+      padding: 14px 18px;
+      background: #f1f5f9;
+      color: var(--text);
+      font-weight: 900;
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+    .btn-primary { background: var(--blue); color: white; box-shadow: 0 14px 30px rgba(37, 99, 235, .22); }
+    .btn-dark { background: var(--text); color: white; box-shadow: 0 14px 30px rgba(15, 23, 42, .18); }
+    .btn-outline { background: transparent; border: 1px solid var(--line); }
+    .btn-danger { background: var(--red-soft); color: #991b1b; }
+    .btn-warning { background: var(--yellow-soft); color: #92400e; }
+    .btn-full { width: 100%; }
+
+    .icon-btn {
+      width: 48px;
+      height: 48px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.75);
+      color: var(--text);
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+
+    .home-grid { display: grid; gap: 12px; }
+    .exam-card { border: 1px solid var(--line); border-radius: 22px; padding: 16px; background: #fff; }
+    .exam-name { font-weight: 950; font-size: 1.08rem; letter-spacing: -.03em; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 12px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: #f1f5f9; color: #334155; font-size: .82rem; font-weight: 850; }
+    .chip-green { background: var(--green-soft); color: #166534; }
+    .chip-red { background: var(--red-soft); color: #991b1b; }
+    .chip-yellow { background: var(--yellow-soft); color: #92400e; }
+
+    textarea, input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #fbfdff;
+      color: var(--text);
+      outline: none;
+      padding: 16px;
+    }
+    textarea { min-height: 170px; resize: vertical; }
+    textarea:focus, input:focus { border-color: var(--blue); box-shadow: 0 0 0 4px rgba(37,99,235,.11); }
+    .example-box { background: #f8fafc; border: 1px solid var(--line); border-radius: 18px; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .86rem; overflow-x: auto; }
+
+    .question-screen {
+      width: min(1220px, 100%);
+      margin: 0 auto;
+    }
+
+    .question-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .question-head {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .q-label { font-weight: 950; font-size: clamp(1.05rem, 2.4vw, 1.55rem); letter-spacing: -.035em; white-space: nowrap; }
+    .q-progress { display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
+    .q-progress-text { text-align: center; font-weight: 950; color: #334155; }
+    .bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+    .bar-fill { height: 100%; width: 0%; border-radius: 99px; background: var(--blue); transition: width .2s ease; }
+
+    .review-toggle {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #475569;
+      border-radius: 18px;
+      padding: 12px 14px;
+      min-height: 48px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .review-toggle.active { background: var(--yellow-soft); border-color: #facc15; color: #92400e; }
+
+    .answers-row {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(60px, 1fr));
+      gap: clamp(8px, 1.7vw, 18px);
+      width: 100%;
+    }
+
+    .answer-btn {
+      aspect-ratio: 1 / 1;
+      min-height: clamp(74px, 18vw, 164px);
+      border: 2px solid transparent;
+      border-radius: clamp(18px, 4vw, 34px);
+      background: #fff;
+      color: #082f49;
+      box-shadow: 0 18px 40px rgba(15,23,42,.10);
+      font-size: clamp(2.2rem, 9vw, 6.2rem);
+      font-weight: 1000;
+      line-height: 1;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+    .answer-btn:active { transform: scale(.96); }
+    .answer-btn.selected { border-color: var(--blue); background: var(--blue-soft); color: #1d4ed8; box-shadow: 0 20px 46px rgba(37,99,235,.18); }
+    .answer-btn.correct { border-color: var(--green); background: var(--green-soft); color: #166534; }
+    .answer-btn.wrong { border-color: var(--red); background: var(--red-soft); color: #991b1b; }
+    .answer-btn:disabled { cursor: default; opacity: 1; }
+
+    .status {
+      min-height: 56px;
+      border-radius: 18px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
+      font-weight: 900;
+      color: #334155;
+    }
+    .status.ok { background: var(--green-soft); border-color: #86efac; color: #166534; animation: pop .20s ease-out; }
+    .status.no { background: var(--red-soft); border-color: #fecaca; color: #991b1b; animation: pop .20s ease-out; }
+    .status.warn { background: var(--yellow-soft); border-color: #fde68a; color: #92400e; }
+    @keyframes pop { from { transform: scale(.98); opacity: .35; } to { transform: scale(1); opacity: 1; } }
+
+    .question-actions {
+      display: grid;
+      grid-template-columns: 1fr 1.35fr 1fr;
+      gap: 10px;
+    }
+    .confirm-row {
+      display: grid;
+      grid-template-columns: 1.3fr .9fr;
+      gap: 10px;
+    }
+
+    .review-grid-card { padding: clamp(12px, 2vw, 22px); }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 10px 14px; font-weight: 950; color: #475569; }
+    .tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    .matrix { display: grid; gap: 12px; margin-top: 14px; }
+    .matrix-row { display: grid; grid-template-columns: 74px 1fr; gap: 10px; align-items: center; }
+    .matrix-label { color: var(--muted); font-weight: 900; text-align: right; font-size: .9rem; }
+    .q-grid { display: grid; grid-template-columns: repeat(15, minmax(34px, 1fr)); gap: 7px; }
+    .q-tile {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border: 0;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #334155;
+      font-weight: 950;
+      font-size: clamp(.72rem, 2vw, 1.05rem);
+    }
+    .q-tile.right { background: var(--green-soft); color: #166534; }
+    .q-tile.wrong { background: var(--red-soft); color: #991b1b; }
+    .q-tile.pending { background: #f1f5f9; color: #64748b; }
+    .q-tile.marked::after { content: '★'; position: absolute; top: -7px; right: -5px; font-size: .82rem; color: #d97706; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .stat { border: 1px solid var(--line); border-radius: 20px; padding: 14px; background: #fff; }
+    .stat-value { font-size: clamp(1.45rem, 5vw, 2.8rem); line-height: 1; font-weight: 1000; letter-spacing: -.07em; }
+    .stat-label { margin-top: 6px; color: var(--muted); font-size: .82rem; font-weight: 850; }
+
+    .empty { border: 1px dashed #cbd5e1; border-radius: 22px; padding: 20px; text-align: center; color: var(--muted); background: rgba(255,255,255,.62); }
+
+    .rotate-note { display: none; }
+
+    @media (orientation: landscape) and (max-height: 560px) {
+      #app { width: 100%; max-width: none; padding: 10px max(10px, env(safe-area-inset-right)) 10px max(10px, env(safe-area-inset-left)); }
+      .screen, .question-screen { min-height: calc(100vh - 20px); gap: 8px; }
+      .question-card { padding: 12px; gap: 8px; border-radius: 24px; }
+      .question-head { grid-template-columns: auto minmax(150px, 1fr) auto; }
+      .q-label { font-size: clamp(1rem, 2.3vw, 1.35rem); }
+      .q-progress-text { font-size: .95rem; }
+      .review-toggle { min-height: 42px; padding: 9px 12px; border-radius: 14px; }
+      .answers-row { gap: 12px; }
+      .answer-btn { min-height: min(42vh, 190px); border-radius: 28px; font-size: min(12vh, 6rem); }
+      .status { min-height: 44px; padding: 7px; }
+      .btn { min-height: 46px; padding: 10px 14px; border-radius: 15px; }
+      .question-actions, .confirm-row { gap: 8px; }
+      .title { font-size: 1.7rem; }
+      .subtitle { display: none; }
+      .card { padding: 16px; }
+      .matrix-row { grid-template-columns: 62px 1fr; }
+      .q-grid { gap: 6px; }
+      .q-tile { border-radius: 10px; }
+    }
+
+    @media (max-width: 620px) and (orientation: portrait) {
+      .rotate-note { display: block; }
+      .question-head { grid-template-columns: 1fr; }
+      .review-toggle { width: 100%; }
+      .answer-btn { min-height: clamp(56px, 16vw, 96px); border-radius: 18px; }
+      .question-actions, .confirm-row, .stats { grid-template-columns: 1fr; }
+      .matrix-row { grid-template-columns: 1fr; }
+      .matrix-label { text-align: left; }
+      .q-grid { grid-template-columns: repeat(5, minmax(40px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    const app = document.getElementById('app');
+    const STORAGE_KEY = 'gabarito-deck-offline-v1';
+    const LEGACY_KEYS = ['gabarito-offline-provas-v5-clean', 'provas'];
+
+    let provas = [];
+    let current = {
+      provaId: null,
+      questoes: [],
+      index: 0,
+      selected: null,
+      modo: 'normal'
+    };
+
+    function html(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function uid() {
+      return 'prova-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+    }
+
+    function normalize(prova) {
+      const p = prova || {};
+      const gabarito = {};
+      Object.entries(p.gabarito || {}).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n > 0 && v) gabarito[String(n)] = String(v).trim().toUpperCase();
+      });
+      const respostas = {};
+      Object.entries(p.respostas || {}).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n > 0 && v) respostas[String(n)] = String(v).trim().toUpperCase();
+      });
+      const confirmadas = {};
+      Object.entries(p.confirmadas || {}).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n > 0 && v) confirmadas[String(n)] = true;
+      });
+      // Compatibilidade com versões antigas: se havia resposta, ela era confirmada.
+      Object.keys(respostas).forEach(k => { if (p.confirmadas === undefined) confirmadas[k] = true; });
+
+      const marcadasRevisao = {};
+      const origemRevisao = p.marcadasRevisao || p.revisar || {};
+      Object.entries(origemRevisao).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n > 0 && v) marcadasRevisao[String(n)] = true;
+      });
+
+      const total = Number(p.totalQuestoes || Object.keys(gabarito).length || 0);
+      return {
+        id: p.id || uid(),
+        nome: p.nome || 'Prova',
+        totalQuestoes: Math.min(Math.max(total, 0), 60),
+        alternativas: Array.isArray(p.alternativas) && p.alternativas.length ? p.alternativas.map(a => String(a).toUpperCase()) : ['A','B','C','D','E'],
+        gabarito,
+        respostas,
+        confirmadas,
+        marcadasRevisao,
+        criadoEm: p.criadoEm || new Date().toISOString()
+      };
+    }
+
+    function load() {
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          for (const key of LEGACY_KEYS) {
+            raw = localStorage.getItem(key);
+            if (raw) break;
+          }
+        }
+        provas = raw ? JSON.parse(raw).map(normalize).filter(p => p.totalQuestoes > 0) : [];
+        save();
+      } catch (e) {
+        provas = [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(provas));
+      localStorage.setItem('provas', JSON.stringify(provas));
+    }
+
+    function getProva(id) {
+      return provas.find(p => p.id === id);
+    }
+
+    function resp(prova, q) { return prova.respostas[String(q)] || ''; }
+    function cor(prova, q) { return prova.gabarito[String(q)] || ''; }
+    function confirmed(prova, q) { return !!prova.confirmadas[String(q)]; }
+    function marked(prova, q) { return !!prova.marcadasRevisao[String(q)]; }
+
+    function compute(prova) {
+      const certas = [];
+      const erradas = [];
+      const pendentes = [];
+      const rever = [];
+
+      for (let i = 1; i <= prova.totalQuestoes; i++) {
+        if (marked(prova, i)) rever.push(i);
+        if (!confirmed(prova, i)) pendentes.push(i);
+        else if (resp(prova, i) === cor(prova, i)) certas.push(i);
+        else erradas.push(i);
+      }
+      return {
+        certas,
+        erradas,
+        pendentes,
+        rever,
+        acertos: certas.length,
+        erros: erradas.length,
+        percentual: prova.totalQuestoes ? Math.round((certas.length / prova.totalQuestoes) * 100) : 0
+      };
+    }
+
+    function screen(title, subtitle, content, extraClass = '') {
+      app.innerHTML = `
+        <main class="screen ${extraClass}">
+          <div class="topbar">
+            <div class="title-block">
+              <h1 class="title">${html(title)}</h1>
+              ${subtitle ? `<p class="subtitle">${html(subtitle)}</p>` : ''}
+            </div>
+          </div>
+          ${content}
+        </main>
+      `;
+    }
+
+    function renderHome() {
+      const cards = provas.map(prova => {
+        const r = compute(prova);
+        const respondeu = r.certas.length + r.erradas.length + r.pendentes.length < prova.totalQuestoes || Object.keys(prova.confirmadas).length > 0;
+        return `
+          <div class="exam-card">
+            <div class="exam-name">${html(prova.nome)}</div>
+            <div class="chips">
+              <span class="chip">${prova.totalQuestoes} questões</span>
+              <span class="chip chip-green">${r.acertos} acertos</span>
+              <span class="chip chip-red">${r.erros} erros</span>
+              <span class="chip chip-yellow">${r.rever.length} rever</span>
+            </div>
+            <div class="row">
+              <button class="btn btn-primary grow" onclick="startProva('${prova.id}')">Responder</button>
+              <button class="btn btn-outline" onclick="renderResultado('${prova.id}', 'todas')">Resultado</button>
+              <button class="btn btn-outline" onclick="renderImportar('${prova.id}')">Editar</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      screen('Gabarito Deck', 'App offline para responder, revisar e alimentar provas por código.', `
+        <section class="card stack">
+          <div class="row">
+            <button class="btn btn-dark grow" onclick="renderImportar()">Alimentar sistema</button>
+            <button class="btn btn-outline" onclick="limparTudo()">Limpar tudo</button>
+          </div>
+          <div class="rotate-note status warn">Dica: para responder, use o celular deitado na horizontal.</div>
+          <div class="home-grid">${cards || '<div class="empty">Nenhuma prova cadastrada ainda. Toque em Alimentar sistema para importar um gabarito.</div>'}</div>
+        </section>
+      `);
+    }
+
+    function renderImportar(editId = null) {
+      const edit = editId ? getProva(editId) : null;
+      const sample = 'PROVA|URCA 2026.1|60|ABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDEABCDE';
+      const initial = edit ? `PROVA|${edit.nome}|${edit.totalQuestoes}|${Object.keys(edit.gabarito).sort((a,b)=>Number(a)-Number(b)).map(k => edit.gabarito[k]).join('')}` : '';
+
+      screen('Alimentar sistema', 'Inserir gabarito da prova. Tudo fica salvo offline no celular.', `
+        <section class="card stack">
+          <div class="stack">
+            <strong>Formato recomendado</strong>
+            <div class="example-box">PROVA|NOME DA PROVA|TOTAL|GABARITO</div>
+            <p class="muted" style="margin:0">Cada matéria tem 15 questões. Total máximo: 60 questões.</p>
+            <div class="example-box">${html(sample)}</div>
+          </div>
+
+          <textarea id="inputCodigo" placeholder="Cole o gabarito aqui...">${html(initial)}</textarea>
+
+          <div class="row">
+            <button class="btn btn-primary grow" onclick="salvarImportacao('${editId || ''}')">Carregar gabarito</button>
+            <button class="btn btn-outline" onclick="renderHome()">Voltar</button>
+          </div>
+          <p class="tiny" style="margin:0">Também aceita formato linha por linha, como: 1-A, 2-C, 3-B.</p>
+        </section>
+      `);
+    }
+
+    function parseCodigo(texto) {
+      const raw = String(texto || '').trim();
+      if (!raw) throw new Error('Cole um código de gabarito antes de carregar.');
+
+      if (raw.toUpperCase().startsWith('PROVA|')) {
+        const parts = raw.split('|').map(p => p.trim());
+        if (parts.length < 4) throw new Error('Formato incompleto. Use: PROVA|NOME|TOTAL|GABARITO');
+
+        const nome = parts[1] || 'Prova';
+        const total = Number(parts[2]);
+        if (!Number.isInteger(total) || total < 1) throw new Error('O total de questões precisa ser um número.');
+        if (total > 60) throw new Error('O limite máximo aprovado para este app é 60 questões.');
+
+        let alternativas = ['A','B','C','D','E'];
+        let seq = parts[3] || '';
+        if (parts.length >= 5 && parts[3].includes(',')) {
+          alternativas = parts[3].split(',').map(x => x.trim().toUpperCase()).filter(Boolean);
+          seq = parts[4] || '';
+        }
+        seq = seq.toUpperCase().replace(/[^A-Z]/g, '');
+        if (seq.length !== total) throw new Error(`O gabarito tem ${seq.length} letras, mas o total informado é ${total}.`);
+
+        const gabarito = {};
+        [...seq].forEach((letra, idx) => { gabarito[String(idx + 1)] = letra; });
+        return { nome, totalQuestoes: total, alternativas, gabarito };
+      }
+
+      const linhas = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      let nome = 'Prova';
+      let total = 0;
+      let alternativas = ['A','B','C','D','E'];
+      const gabarito = {};
+
+      linhas.forEach(linha => {
+        if (linha.includes(':')) {
+          const idx = linha.indexOf(':');
+          const key = linha.slice(0, idx).trim().toUpperCase();
+          const value = linha.slice(idx + 1).trim();
+          if (key === 'NOME') nome = value || nome;
+          else if (key === 'QUESTOES' || key === 'QUESTÕES' || key === 'TOTAL') total = Number(value);
+          else if (key === 'ALTERNATIVAS') alternativas = value.split(',').map(x => x.trim().toUpperCase()).filter(Boolean);
+          else if (key === 'GABARITO') {
+            const seq = value.toUpperCase().replace(/[^A-Z]/g, '');
+            [...seq].forEach((letra, idx2) => { gabarito[String(idx2 + 1)] = letra; });
+          }
+          return;
+        }
+        const m = linha.match(/^(\d{1,2})\s*[-.) ]\s*([A-Za-z])$/);
+        if (m) {
+          const n = Number(m[1]);
+          const letra = m[2].toUpperCase();
+          gabarito[String(n)] = letra;
+          if (n > total) total = n;
+        }
+      });
+
+      if (!total) total = Object.keys(gabarito).length;
+      if (!Number.isInteger(total) || total < 1) throw new Error('Não consegui identificar a quantidade de questões.');
+      if (total > 60) throw new Error('O limite máximo aprovado para este app é 60 questões.');
+      if (Object.keys(gabarito).length !== total) throw new Error(`Foram encontradas ${Object.keys(gabarito).length} respostas para ${total} questões.`);
+      return { nome, totalQuestoes: total, alternativas, gabarito };
+    }
+
+    function salvarImportacao(editId = '') {
+      try {
+        const parsed = parseCodigo(document.getElementById('inputCodigo').value);
+        const prova = normalize({
+          id: editId || uid(),
+          nome: parsed.nome,
+          totalQuestoes: parsed.totalQuestoes,
+          alternativas: parsed.alternativas,
+          gabarito: parsed.gabarito,
+          respostas: {},
+          confirmadas: {},
+          marcadasRevisao: {}
+        });
+        if (editId) provas = provas.map(p => p.id === editId ? prova : p);
+        else provas.unshift(prova);
+        save();
+        renderHome();
+      } catch (e) {
+        alert(e.message || 'Não foi possível carregar o gabarito.');
+      }
+    }
+
+    function startProva(provaId, questoes = null, modo = 'normal') {
+      const prova = getProva(provaId);
+      if (!prova) return;
+      current = {
+        provaId,
+        questoes: questoes || Array.from({ length: prova.totalQuestoes }, (_, i) => i + 1),
+        index: 0,
+        selected: null,
+        modo
+      };
+      renderQuestao();
+    }
+
+    function renderQuestao() {
+      const prova = getProva(current.provaId);
+      if (!prova) return renderHome();
+      const q = current.questoes[current.index];
+      const resposta = resp(prova, q);
+      const correta = cor(prova, q);
+      const foiConfirmada = confirmed(prova, q);
+      const marcada = marked(prova, q);
+      const pct = Math.round(((current.index + 1) / current.questoes.length) * 100);
+
+      const buttons = prova.alternativas.map(alt => {
+        let cls = 'answer-btn';
+        if (!foiConfirmada && current.selected === alt) cls += ' selected';
+        if (foiConfirmada && alt === correta) cls += ' correct';
+        if (foiConfirmada && alt === resposta && resposta !== correta) cls += ' wrong';
+        const disabled = foiConfirmada ? 'disabled' : '';
+        return `<button class="${cls}" ${disabled} onclick="selecionar('${alt}')">${html(alt)}</button>`;
+      }).join('');
+
+      let status = '<div class="status">Escolha uma alternativa. Ela só será corrigida após confirmar.</div>';
+      if (!foiConfirmada && current.selected) status = `<div class="status warn">Selecionada: ${html(current.selected)}. Toque em confirmar para corrigir.</div>`;
+      if (foiConfirmada && resposta === correta) status = `<div class="status ok">✓ Correta</div>`;
+      if (foiConfirmada && resposta !== correta) status = `<div class="status no">✕ Errada · correta: ${html(correta)}</div>`;
+
+      app.innerHTML = `
+        <main class="screen question-screen">
+          <section class="card question-card">
+            <div class="question-head">
+              <button class="icon-btn" onclick="renderHome()" aria-label="Menu">☰</button>
+              <div class="q-progress">
+                <div class="q-progress-text">${current.index + 1}/${current.questoes.length}</div>
+                <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
+              </div>
+              <button class="review-toggle ${marcada ? 'active' : ''}" onclick="toggleRever()">${marcada ? '★ Rever' : '☆ Marcar para rever'}</button>
+            </div>
+
+            <div class="q-label">Questão ${q}</div>
+            <div class="answers-row">${buttons}</div>
+            ${status}
+
+            <div class="confirm-row">
+              ${foiConfirmada
+                ? `<button class="btn btn-primary" onclick="proximaQuestao()">${current.index === current.questoes.length - 1 ? 'Finalizar' : 'Próxima questão'}</button>`
+                : `<button class="btn btn-primary" ${current.selected ? '' : 'disabled'} onclick="confirmarResposta()">Confirmar resposta</button>`}
+              <button class="btn btn-outline" onclick="refazerProva('${prova.id}')">Refazer prova</button>
+            </div>
+
+            <div class="question-actions">
+              <button class="btn btn-outline" ${current.index === 0 ? 'disabled' : ''} onclick="questaoAnterior()">Anterior</button>
+              <button class="btn btn-outline" onclick="renderResultado('${prova.id}', 'todas')">Mapa</button>
+              <button class="btn btn-outline" onclick="proximaQuestao()">${current.index === current.questoes.length - 1 ? 'Resultado' : 'Pular'}</button>
+            </div>
+          </section>
+        </main>
+      `;
+    }
+
+    function selecionar(alt) {
+      const prova = getProva(current.provaId);
+      const q = current.questoes[current.index];
+      if (!prova || confirmed(prova, q)) return;
+      current.selected = alt;
+      renderQuestao();
+    }
+
+    function confirmarResposta() {
+      const prova = getProva(current.provaId);
+      const q = current.questoes[current.index];
+      if (!prova || !current.selected) return;
+      prova.respostas[String(q)] = current.selected;
+      prova.confirmadas[String(q)] = true;
+      save();
+      current.selected = null;
+      renderQuestao();
+    }
+
+    function toggleRever() {
+      const prova = getProva(current.provaId);
+      const q = current.questoes[current.index];
+      if (!prova) return;
+      const key = String(q);
+      if (prova.marcadasRevisao[key]) delete prova.marcadasRevisao[key];
+      else prova.marcadasRevisao[key] = true;
+      save();
+      renderQuestao();
+    }
+
+    function questaoAnterior() {
+      if (current.index > 0) {
+        current.index--;
+        current.selected = null;
+        renderQuestao();
+      }
+    }
+
+    function proximaQuestao() {
+      if (current.index < current.questoes.length - 1) {
+        current.index++;
+        current.selected = null;
+        renderQuestao();
+      } else {
+        renderResultado(current.provaId, 'todas');
+      }
+    }
+
+    function renderResultado(provaId, filtro = 'todas') {
+      const prova = getProva(provaId);
+      if (!prova) return renderHome();
+      const r = compute(prova);
+      const filtros = {
+        todas: Array.from({ length: prova.totalQuestoes }, (_, i) => i + 1),
+        certas: r.certas,
+        erradas: r.erradas,
+        rever: r.rever,
+        pendentes: r.pendentes
+      };
+      const ativa = filtros[filtro] || filtros.todas;
+      const setAtivo = new Set(ativa.map(Number));
+
+      const grupos = [];
+      for (let start = 1; start <= prova.totalQuestoes; start += 15) {
+        const end = Math.min(start + 14, prova.totalQuestoes);
+        const tiles = [];
+        for (let n = start; n <= end; n++) {
+          if (filtro !== 'todas' && !setAtivo.has(n)) continue;
+          let cls = 'q-tile pending';
+          if (r.certas.includes(n)) cls = 'q-tile right';
+          if (r.erradas.includes(n)) cls = 'q-tile wrong';
+          if (marked(prova, n)) cls += ' marked';
+          tiles.push(`<button class="${cls}" onclick="abrirQuestao('${prova.id}', ${n})">${n}</button>`);
+        }
+        grupos.push(`
+          <div class="matrix-row">
+            <div class="matrix-label">${start} - ${end}</div>
+            <div class="q-grid">${tiles.join('') || '<span class="tiny">Nenhuma questão neste filtro</span>'}</div>
+          </div>
+        `);
+      }
+
+      screen('Revisão da prova', `${prova.nome} · ${prova.totalQuestoes} questões`, `
+        <section class="card review-grid-card stack">
+          <div class="stats">
+            <div class="stat"><div class="stat-value">${r.acertos}</div><div class="stat-label">Acertadas</div></div>
+            <div class="stat"><div class="stat-value">${r.erros}</div><div class="stat-label">Erradas</div></div>
+            <div class="stat"><div class="stat-value">${r.rever.length}</div><div class="stat-label">Para rever</div></div>
+            <div class="stat"><div class="stat-value">${r.percentual}%</div><div class="stat-label">Desempenho</div></div>
+          </div>
+
+          <div class="tabs">
+            <button class="tab ${filtro === 'todas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'todas')">Todas</button>
+            <button class="tab ${filtro === 'certas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'certas')">Acertadas</button>
+            <button class="tab ${filtro === 'erradas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'erradas')">Erradas</button>
+            <button class="tab ${filtro === 'rever' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'rever')">Rever</button>
+            <button class="tab ${filtro === 'pendentes' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'pendentes')">Pendentes</button>
+          </div>
+
+          <div class="matrix">${grupos.join('')}</div>
+
+          <div class="row">
+            <button class="btn btn-primary grow" onclick="refazerErradas('${prova.id}')">Refazer erradas</button>
+            <button class="btn btn-outline grow" onclick="startProva('${prova.id}')">Continuar prova</button>
+            <button class="btn btn-outline grow" onclick="refazerProva('${prova.id}')">Refazer prova</button>
+            <button class="btn btn-outline" onclick="renderHome()">Menu</button>
+          </div>
+        </section>
+      `);
+    }
+
+    function abrirQuestao(provaId, numero) {
+      const prova = getProva(provaId);
+      if (!prova) return;
+      current = {
+        provaId,
+        questoes: Array.from({ length: prova.totalQuestoes }, (_, i) => i + 1),
+        index: numero - 1,
+        selected: null,
+        modo: 'normal'
+      };
+      renderQuestao();
+    }
+
+    function refazerErradas(provaId) {
+      const prova = getProva(provaId);
+      if (!prova) return;
+      const r = compute(prova);
+      if (!r.erradas.length) {
+        alert('Não há questões erradas para refazer.');
+        return;
+      }
+      if (!confirm(`Refazer ${r.erradas.length} questões erradas? As respostas dessas questões serão apagadas.`)) return;
+      r.erradas.forEach(n => {
+        delete prova.respostas[String(n)];
+        delete prova.confirmadas[String(n)];
+      });
+      save();
+      startProva(provaId, r.erradas, 'erradas');
+    }
+
+    function refazerProva(provaId) {
+      const prova = getProva(provaId);
+      if (!prova) return;
+      if (!confirm('Refazer a prova inteira? Suas respostas serão apagadas, mas as marcações para rever serão mantidas.')) return;
+      prova.respostas = {};
+      prova.confirmadas = {};
+      save();
+      startProva(provaId);
+    }
+
+    function limparTudo() {
+      if (!confirm('Apagar todas as provas salvas neste aparelho?')) return;
+      provas = [];
+      save();
+      renderHome();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      load();
+      renderHome();
+    });
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
