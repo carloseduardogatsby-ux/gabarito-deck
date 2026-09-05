@@ -1,4 +1,3 @@
-
 name: Gerar APK Android
 
 on:
@@ -29,14 +28,12 @@ jobs:
         run: npm install
 
       - name: Criar projeto Android com Capacitor
-        run: |
-          rm -rf android
-          npx cap add android
+        run: npx cap add android
 
       - name: Sincronizar app com Android
         run: npx cap sync android
 
-      - name: Forçar orientação horizontal no Android
+      - name: Permitir orientação livre (sensor) no Android
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -44,7 +41,7 @@ jobs:
           s = p.read_text()
           target = 'android:theme="@style/AppTheme.NoActionBarLaunch"'
           if 'android:screenOrientation=' not in s and target in s:
-              s = s.replace(target, target + '\n            android:screenOrientation="landscape"')
+              s = s.replace(target, target + '\n            android:screenOrientation="fullSensor"')
           p.write_text(s)
           PY
 
