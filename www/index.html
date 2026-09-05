@@ -8,6 +8,14 @@
   <link rel="icon" href="icon-192.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Gabarito Deck Offline</title>
+  <script>
+    // Aplica o tema salvo o mais rápido possível, antes do CSS renderizar,
+    // para não haver um "flash" claro na tela ao abrir o app no modo escuro.
+    try {
+      var savedTheme = localStorage.getItem('gabarito-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    } catch (e) {}
+  </script>
   <style>
     :root {
       --bg: #f6f8fc;
@@ -27,14 +35,38 @@
       --radius: 26px;
     }
 
+    html[data-theme="dark"] {
+      --bg: #0b1220;
+      --card: #131c2e;
+      --text: #e7ecf7;
+      --muted: #93a1bd;
+      --line: #253148;
+      --blue: #3b82f6;
+      --blue-soft: #17284a;
+      --green: #22c55e;
+      --green-soft: #12301f;
+      --red: #f87171;
+      --red-soft: #3a1717;
+      --yellow: #fbbf24;
+      --yellow-soft: #3a2c0f;
+      --shadow: 0 18px 55px rgba(0, 0, 0, .45);
+    }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     html, body { margin: 0; min-height: 100%; }
+
+    html { transition: background-color .2s ease; }
 
     body {
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: radial-gradient(circle at top, #ffffff 0%, var(--bg) 52%, #eef2f7 100%);
       color: var(--text);
+      transition: background .2s ease, color .2s ease;
+    }
+
+    html[data-theme="dark"] body {
+      background: radial-gradient(circle at top, #172033 0%, var(--bg) 55%, #060a12 100%);
     }
 
     button, textarea, input { font: inherit; }
@@ -126,6 +158,7 @@
     .chip-green { background: var(--green-soft); color: #166534; }
     .chip-red { background: var(--red-soft); color: #991b1b; }
     .chip-yellow { background: var(--yellow-soft); color: #92400e; }
+    .chip-blue { background: var(--blue-soft); color: #1d4ed8; }
 
     textarea, input {
       width: 100%;
@@ -204,6 +237,8 @@
     .answer-btn.correct { border-color: var(--green); background: var(--green-soft); color: #166534; }
     .answer-btn.wrong { border-color: var(--red); background: var(--red-soft); color: #991b1b; }
     .answer-btn:disabled { cursor: default; opacity: 1; }
+    .answer-btn.null-q { opacity: .35; background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 8px, #e2e8f0 8px, #e2e8f0 16px); color: #94a3b8; }
+    html[data-theme="dark"] .answer-btn.null-q { background: repeating-linear-gradient(45deg, #182335, #182335 8px, #10192b 8px, #10192b 16px); color: #4b5875; }
 
     .status {
       min-height: 56px;
@@ -256,6 +291,7 @@
     .q-tile.right { background: var(--green-soft); color: #166534; }
     .q-tile.wrong { background: var(--red-soft); color: #991b1b; }
     .q-tile.pending { background: #f1f5f9; color: #64748b; }
+    .q-tile.null { background: var(--blue-soft); color: #1d4ed8; }
     .q-tile.marked::after { content: '★'; position: absolute; top: -7px; right: -5px; font-size: .82rem; color: #d97706; }
 
     .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -264,6 +300,51 @@
     .stat-label { margin-top: 6px; color: var(--muted); font-size: .82rem; font-weight: 850; }
 
     .empty { border: 1px dashed #cbd5e1; border-radius: 22px; padding: 20px; text-align: center; color: var(--muted); background: rgba(255,255,255,.62); }
+
+    .chart-card { border: 1px solid var(--line); border-radius: 22px; padding: 16px; background: rgba(255,255,255,.6); }
+    .chart-title { font-weight: 950; letter-spacing: -.02em; margin-bottom: 10px; }
+    .chart-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+    .donut {
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .3s ease;
+    }
+    .donut-hole {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 2px 8px rgba(0,0,0,.06);
+    }
+    .donut-value { font-size: 1.35rem; font-weight: 1000; letter-spacing: -.05em; line-height: 1; }
+    .donut-caption { font-size: .68rem; color: var(--muted); font-weight: 800; margin-top: 2px; }
+
+    .legend { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 150px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; font-size: .88rem; font-weight: 800; color: #334155; }
+    html[data-theme="dark"] .legend-item { color: #cbd5e1; }
+    .dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    .perf-bars { display: flex; flex-direction: column; gap: 9px; }
+    .perf-bar-row { display: grid; grid-template-columns: 70px 1fr 44px; align-items: center; gap: 10px; }
+    .perf-bar-label { font-size: .82rem; font-weight: 850; color: var(--muted); }
+    .perf-bar-track { height: 12px; border-radius: 99px; background: var(--line); overflow: hidden; }
+    .perf-bar-fill { height: 100%; border-radius: 99px; transition: width .3s ease; }
+    .perf-bar-pct { font-size: .82rem; font-weight: 900; text-align: right; }
+
+    @media (max-width: 480px) {
+      .chart-row { justify-content: center; }
+      .perf-bar-row { grid-template-columns: 56px 1fr 38px; }
+    }
 
     .rotate-note { display: none; }
 
@@ -298,6 +379,41 @@
       .matrix-label { text-align: left; }
       .q-grid { grid-template-columns: repeat(5, minmax(40px, 1fr)); }
     }
+
+    /* ===== Tema escuro: overrides de elementos com cor fixa ===== */
+    html[data-theme="dark"] .card { background: rgba(19,28,46,.92); border-color: rgba(37,49,72,.9); }
+    html[data-theme="dark"] .exam-card { background: var(--card); border-color: var(--line); }
+    html[data-theme="dark"] .chip { background: #1c2942; color: #cbd5e1; }
+    html[data-theme="dark"] textarea, html[data-theme="dark"] input { background: #0f172a; color: var(--text); border-color: var(--line); }
+    html[data-theme="dark"] .example-box { background: #0f172a; border-color: var(--line); color: #cbd5e1; }
+    html[data-theme="dark"] .icon-btn { background: rgba(19,28,46,.85); border-color: var(--line); color: var(--text); }
+    html[data-theme="dark"] .review-toggle { background: var(--card); color: #cbd5e1; border-color: var(--line); }
+    html[data-theme="dark"] .q-progress-text { color: #cbd5e1; }
+    html[data-theme="dark"] .status { background: #0f172a; border-color: var(--line); color: #cbd5e1; }
+    html[data-theme="dark"] .answer-btn { background: var(--card); color: #e7ecf7; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+    html[data-theme="dark"] .bar { background: #1c2942; }
+    html[data-theme="dark"] .tab { background: var(--card); color: #cbd5e1; border-color: var(--line); }
+    html[data-theme="dark"] .stat { background: var(--card); border-color: var(--line); }
+    html[data-theme="dark"] .q-tile { background: #1c2942; color: #cbd5e1; }
+    html[data-theme="dark"] .q-tile.pending { background: #182335; color: #93a1bd; }
+    html[data-theme="dark"] .empty { background: rgba(19,28,46,.6); border-color: var(--line); }
+    html[data-theme="dark"] .chart-card { background: rgba(19,28,46,.55); border-color: var(--line); }
+    html[data-theme="dark"] .donut-hole { background: var(--card); box-shadow: inset 0 2px 8px rgba(0,0,0,.35); }
+    html[data-theme="dark"] .theme-toggle { background: var(--card); border-color: var(--line); color: var(--text); }
+
+    .theme-toggle {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.75);
+      color: var(--text);
+      font-size: 1.25rem;
+    }
   </style>
 </head>
 <body>
@@ -330,6 +446,31 @@
       return 'prova-' + Date.now() + '-' + Math.random().toString(16).slice(2);
     }
 
+    const THEME_KEY = 'gabarito-theme';
+
+    function getTheme() {
+      return localStorage.getItem(THEME_KEY) || 'light';
+    }
+
+    function themeIcon() {
+      return getTheme() === 'dark' ? '☀️' : '🌙';
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) meta.setAttribute('content', theme === 'dark' ? '#0b1220' : '#0f172a');
+    }
+
+    function toggleTheme() {
+      const next = getTheme() === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, next);
+      applyTheme(next);
+      // Atualiza só o ícone dos botões de tema, sem re-renderizar a tela
+      // (evita apagar texto que o usuário já tenha digitado em um formulário aberto).
+      document.querySelectorAll('.theme-toggle').forEach(btn => { btn.textContent = themeIcon(); });
+    }
+
     function normalize(prova) {
       const p = prova || {};
       const gabarito = {};
@@ -357,6 +498,18 @@
         if (n > 0 && v) marcadasRevisao[String(n)] = true;
       });
 
+      // Questões anuladas: sem resposta correta, não podem ser respondidas
+      // e contam automaticamente como certas para o candidato (convenção usual em bancas).
+      const anuladas = {};
+      Object.entries(p.anuladas || {}).forEach(([k, v]) => {
+        const n = Number(k);
+        if (n > 0 && v) anuladas[String(n)] = true;
+      });
+      // Se o próprio gabarito trouxe '*' na letra, também marca como anulada.
+      Object.entries(gabarito).forEach(([k, v]) => {
+        if (v === '*') anuladas[k] = true;
+      });
+
       const total = Number(p.totalQuestoes || Object.keys(gabarito).length || 0);
       return {
         id: p.id || uid(),
@@ -367,6 +520,7 @@
         respostas,
         confirmadas,
         marcadasRevisao,
+        anuladas,
         criadoEm: p.criadoEm || new Date().toISOString()
       };
     }
@@ -400,28 +554,116 @@
     function cor(prova, q) { return prova.gabarito[String(q)] || ''; }
     function confirmed(prova, q) { return !!prova.confirmadas[String(q)]; }
     function marked(prova, q) { return !!prova.marcadasRevisao[String(q)]; }
+    function anulada(prova, q) { return !!(prova.anuladas && prova.anuladas[String(q)]); }
 
     function compute(prova) {
       const certas = [];
       const erradas = [];
       const pendentes = [];
       const rever = [];
+      const anuladasLista = [];
+
+      // Divide a prova em blocos de 15 questões (1 "matéria" por bloco, conforme o app já assume)
+      // para alimentar o gráfico de desempenho por matéria.
+      const materias = [];
+      for (let start = 1; start <= prova.totalQuestoes; start += 15) {
+        const end = Math.min(start + 14, prova.totalQuestoes);
+        let acertosMateria = 0;
+        let validasMateria = 0;
+        for (let i = start; i <= end; i++) {
+          if (anulada(prova, i)) continue;
+          validasMateria++;
+          if (confirmed(prova, i) && resp(prova, i) === cor(prova, i)) acertosMateria++;
+        }
+        materias.push({
+          inicio: start,
+          fim: end,
+          acertos: acertosMateria,
+          total: validasMateria,
+          percentual: validasMateria ? Math.round((acertosMateria / validasMateria) * 100) : 0
+        });
+      }
 
       for (let i = 1; i <= prova.totalQuestoes; i++) {
         if (marked(prova, i)) rever.push(i);
+        if (anulada(prova, i)) { anuladasLista.push(i); continue; }
         if (!confirmed(prova, i)) pendentes.push(i);
         else if (resp(prova, i) === cor(prova, i)) certas.push(i);
         else erradas.push(i);
       }
+
+      // Anuladas contam automaticamente como acerto para o candidato.
+      const totalValido = prova.totalQuestoes || 0;
+      const acertosComAnuladas = certas.length + anuladasLista.length;
+
       return {
         certas,
         erradas,
         pendentes,
         rever,
+        anuladas: anuladasLista,
+        materias,
         acertos: certas.length,
         erros: erradas.length,
-        percentual: prova.totalQuestoes ? Math.round((certas.length / prova.totalQuestoes) * 100) : 0
+        percentual: totalValido ? Math.round((acertosComAnuladas / totalValido) * 100) : 0
       };
+    }
+
+    function graficoDesempenho(r) {
+      const total = r.acertos + r.erros + r.anuladas.length + r.pendentes.length;
+      if (!total) return '';
+
+      const pCertas = (r.acertos / total) * 100;
+      const pErradas = (r.erros / total) * 100;
+      const pAnuladas = (r.anuladas.length / total) * 100;
+      const c1 = pCertas;
+      const c2 = c1 + pErradas;
+      const c3 = c2 + pAnuladas;
+
+      const donut = `
+        <div class="donut" style="background:conic-gradient(var(--green) 0% ${c1}%, var(--red) ${c1}% ${c2}%, var(--blue) ${c2}% ${c3}%, var(--line) ${c3}% 100%)">
+          <div class="donut-hole">
+            <div class="donut-value">${r.percentual}%</div>
+            <div class="donut-caption">aproveitamento</div>
+          </div>
+        </div>
+      `;
+
+      const legenda = `
+        <div class="legend">
+          <div class="legend-item"><span class="dot" style="background:var(--green)"></span>Certas · ${r.acertos}</div>
+          <div class="legend-item"><span class="dot" style="background:var(--red)"></span>Erradas · ${r.erros}</div>
+          <div class="legend-item"><span class="dot" style="background:var(--blue)"></span>Anuladas · ${r.anuladas.length}</div>
+          <div class="legend-item"><span class="dot" style="background:var(--line)"></span>Pendentes · ${r.pendentes.length}</div>
+        </div>
+      `;
+
+      const barras = r.materias.map((m, i) => {
+        let cor = 'var(--red)';
+        if (m.percentual >= 70) cor = 'var(--green)';
+        else if (m.percentual >= 40) cor = 'var(--yellow)';
+        return `
+          <div class="perf-bar-row">
+            <div class="perf-bar-label">Q${m.inicio}-${m.fim}</div>
+            <div class="perf-bar-track"><div class="perf-bar-fill" style="width:${m.percentual}%; background:${cor}"></div></div>
+            <div class="perf-bar-pct">${m.percentual}%</div>
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div class="chart-card">
+          <div class="chart-title">Desempenho geral</div>
+          <div class="chart-row">
+            ${donut}
+            ${legenda}
+          </div>
+          ${r.materias.length > 1 ? `
+            <div class="chart-title" style="margin-top:14px">Desempenho por matéria <span class="tiny muted">(blocos de 15 questões)</span></div>
+            <div class="perf-bars">${barras}</div>
+          ` : ''}
+        </div>
+      `;
     }
 
     function screen(title, subtitle, content, extraClass = '') {
@@ -432,6 +674,7 @@
               <h1 class="title">${html(title)}</h1>
               ${subtitle ? `<p class="subtitle">${html(subtitle)}</p>` : ''}
             </div>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">${themeIcon()}</button>
           </div>
           ${content}
         </main>
@@ -450,6 +693,7 @@
               <span class="chip chip-green">${r.acertos} acertos</span>
               <span class="chip chip-red">${r.erros} erros</span>
               <span class="chip chip-yellow">${r.rever.length} rever</span>
+              ${r.anuladas.length ? `<span class="chip chip-blue">${r.anuladas.length} anulada${r.anuladas.length > 1 ? 's' : ''}</span>` : ''}
             </div>
             <div class="row">
               <button class="btn btn-primary grow" onclick="startProva('${prova.id}')">Responder</button>
@@ -466,7 +710,7 @@
             <button class="btn btn-dark grow" onclick="renderImportar()">Alimentar sistema</button>
             <button class="btn btn-outline" onclick="limparTudo()">Limpar tudo</button>
           </div>
-          <div class="rotate-note status warn">Dica: para responder, use o celular deitado na horizontal.</div>
+          <div class="rotate-note status warn">Dica: girando o celular na horizontal, as questões aparecem maiores.</div>
           <div class="home-grid">${cards || '<div class="empty">Nenhuma prova cadastrada ainda. Toque em Alimentar sistema para importar um gabarito.</div>'}</div>
         </section>
       `);
@@ -484,6 +728,7 @@
             <div class="example-box">PROVA|NOME DA PROVA|TOTAL|GABARITO</div>
             <p class="muted" style="margin:0">Cada matéria tem 15 questões. Total máximo: 60 questões.</p>
             <div class="example-box">${html(sample)}</div>
+            <p class="muted" style="margin:0">Questão anulada: use <strong>*</strong> no lugar da letra (ex: ABC*E...). Ela fica bloqueada para resposta e conta como acerto automático.</p>
           </div>
 
           <textarea id="inputCodigo" placeholder="Cole o gabarito aqui...">${html(initial)}</textarea>
@@ -492,7 +737,7 @@
             <button class="btn btn-primary grow" onclick="salvarImportacao('${editId || ''}')">Carregar gabarito</button>
             <button class="btn btn-outline" onclick="renderHome()">Voltar</button>
           </div>
-          <p class="tiny" style="margin:0">Também aceita formato linha por linha, como: 1-A, 2-C, 3-B.</p>
+          <p class="tiny" style="margin:0">Também aceita linha por linha: 1-A, 2-C, 3-*, 4-ANULADA. Ou uma linha "ANULADAS: 5,12,30".</p>
         </section>
       `);
     }
@@ -516,12 +761,24 @@
           alternativas = parts[3].split(',').map(x => x.trim().toUpperCase()).filter(Boolean);
           seq = parts[4] || '';
         }
-        seq = seq.toUpperCase().replace(/[^A-Z]/g, '');
-        if (seq.length !== total) throw new Error(`O gabarito tem ${seq.length} letras, mas o total informado é ${total}.`);
+        // '*' marca questão anulada (sem resposta correta, não pode ser respondida).
+        seq = seq.toUpperCase().replace(/[^A-Z*]/g, '');
+        if (seq.length !== total) throw new Error(`O gabarito tem ${seq.length} posições, mas o total informado é ${total}. Use * para marcar uma questão anulada.`);
 
         const gabarito = {};
-        [...seq].forEach((letra, idx) => { gabarito[String(idx + 1)] = letra; });
-        return { nome, totalQuestoes: total, alternativas, gabarito };
+        const anuladas = {};
+        [...seq].forEach((letra, idx) => {
+          gabarito[String(idx + 1)] = letra;
+          if (letra === '*') anuladas[String(idx + 1)] = true;
+        });
+
+        // Chave opcional extra: PROVA|NOME|TOTAL|GABARITO|ANULADAS:1,5,12
+        const extra = parts.slice(4).find(p => /^ANULADAS\s*:/i.test(p));
+        if (extra) {
+          extra.split(':')[1].split(',').map(x => Number(x.trim())).filter(n => n > 0).forEach(n => { anuladas[String(n)] = true; });
+        }
+
+        return { nome, totalQuestoes: total, alternativas, gabarito, anuladas };
       }
 
       const linhas = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
@@ -529,6 +786,7 @@
       let total = 0;
       let alternativas = ['A','B','C','D','E'];
       const gabarito = {};
+      const anuladas = {};
 
       linhas.forEach(linha => {
         if (linha.includes(':')) {
@@ -539,16 +797,29 @@
           else if (key === 'QUESTOES' || key === 'QUESTÕES' || key === 'TOTAL') total = Number(value);
           else if (key === 'ALTERNATIVAS') alternativas = value.split(',').map(x => x.trim().toUpperCase()).filter(Boolean);
           else if (key === 'GABARITO') {
-            const seq = value.toUpperCase().replace(/[^A-Z]/g, '');
-            [...seq].forEach((letra, idx2) => { gabarito[String(idx2 + 1)] = letra; });
+            // '*' marca questão anulada nesta posição.
+            const seq = value.toUpperCase().replace(/[^A-Z*]/g, '');
+            [...seq].forEach((letra, idx2) => {
+              gabarito[String(idx2 + 1)] = letra;
+              if (letra === '*') anuladas[String(idx2 + 1)] = true;
+            });
+          }
+          else if (key === 'ANULADAS') {
+            value.split(',').map(x => Number(x.trim())).filter(n => n > 0).forEach(n => { anuladas[String(n)] = true; });
           }
           return;
         }
-        const m = linha.match(/^(\d{1,2})\s*[-.) ]\s*([A-Za-z])$/);
+        // Aceita: "5-A", "5.A", "5) A", "5-*" ou "5-ANULADA" / "5-NULA"
+        const m = linha.match(/^(\d{1,2})\s*[-.) ]\s*([A-Za-z*]|ANULADA|NULA)$/i);
         if (m) {
           const n = Number(m[1]);
-          const letra = m[2].toUpperCase();
-          gabarito[String(n)] = letra;
+          const valor = m[2].toUpperCase();
+          if (valor === 'ANULADA' || valor === 'NULA' || valor === '*') {
+            gabarito[String(n)] = '*';
+            anuladas[String(n)] = true;
+          } else {
+            gabarito[String(n)] = valor;
+          }
           if (n > total) total = n;
         }
       });
@@ -557,7 +828,7 @@
       if (!Number.isInteger(total) || total < 1) throw new Error('Não consegui identificar a quantidade de questões.');
       if (total > 60) throw new Error('O limite máximo aprovado para este app é 60 questões.');
       if (Object.keys(gabarito).length !== total) throw new Error(`Foram encontradas ${Object.keys(gabarito).length} respostas para ${total} questões.`);
-      return { nome, totalQuestoes: total, alternativas, gabarito };
+      return { nome, totalQuestoes: total, alternativas, gabarito, anuladas };
     }
 
     function salvarImportacao(editId = '') {
@@ -571,7 +842,8 @@
           gabarito: parsed.gabarito,
           respostas: {},
           confirmadas: {},
-          marcadasRevisao: {}
+          marcadasRevisao: {},
+          anuladas: parsed.anuladas || {}
         });
         if (editId) provas = provas.map(p => p.id === editId ? prova : p);
         else provas.unshift(prova);
@@ -599,6 +871,7 @@
       const prova = getProva(current.provaId);
       if (!prova) return renderHome();
       const q = current.questoes[current.index];
+      const ehAnulada = anulada(prova, q);
       const resposta = resp(prova, q);
       const correta = cor(prova, q);
       const foiConfirmada = confirmed(prova, q);
@@ -607,23 +880,28 @@
 
       const buttons = prova.alternativas.map(alt => {
         let cls = 'answer-btn';
-        if (!foiConfirmada && current.selected === alt) cls += ' selected';
-        if (foiConfirmada && alt === correta) cls += ' correct';
-        if (foiConfirmada && alt === resposta && resposta !== correta) cls += ' wrong';
-        const disabled = foiConfirmada ? 'disabled' : '';
+        if (ehAnulada) cls += ' null-q';
+        if (!ehAnulada && !foiConfirmada && current.selected === alt) cls += ' selected';
+        if (!ehAnulada && foiConfirmada && alt === correta) cls += ' correct';
+        if (!ehAnulada && foiConfirmada && alt === resposta && resposta !== correta) cls += ' wrong';
+        const disabled = (ehAnulada || foiConfirmada) ? 'disabled' : '';
         return `<button class="${cls}" ${disabled} onclick="selecionar('${alt}')">${html(alt)}</button>`;
       }).join('');
 
       let status = '<div class="status">Escolha uma alternativa. Ela só será corrigida após confirmar.</div>';
-      if (!foiConfirmada && current.selected) status = `<div class="status warn">Selecionada: ${html(current.selected)}. Toque em confirmar para corrigir.</div>`;
-      if (foiConfirmada && resposta === correta) status = `<div class="status ok">✓ Correta</div>`;
-      if (foiConfirmada && resposta !== correta) status = `<div class="status no">✕ Errada · correta: ${html(correta)}</div>`;
+      if (ehAnulada) status = '<div class="status warn">🚫 Questão anulada — não é possível responder. Contabilizada automaticamente como acerto no resultado.</div>';
+      else if (!foiConfirmada && current.selected) status = `<div class="status warn">Selecionada: ${html(current.selected)}. Toque em confirmar para corrigir.</div>`;
+      else if (foiConfirmada && resposta === correta) status = `<div class="status ok">✓ Correta</div>`;
+      else if (foiConfirmada && resposta !== correta) status = `<div class="status no">✕ Errada · correta: ${html(correta)}</div>`;
 
       app.innerHTML = `
         <main class="screen question-screen">
           <section class="card question-card">
             <div class="question-head">
-              <button class="icon-btn" onclick="renderHome()" aria-label="Menu">☰</button>
+              <div class="row" style="gap:8px">
+                <button class="icon-btn" onclick="renderHome()" aria-label="Menu">☰</button>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema">${themeIcon()}</button>
+              </div>
               <div class="q-progress">
                 <div class="q-progress-text">${current.index + 1}/${current.questoes.length}</div>
                 <div class="bar"><div class="bar-fill" style="width:${pct}%"></div></div>
@@ -636,7 +914,7 @@
             ${status}
 
             <div class="confirm-row">
-              ${foiConfirmada
+              ${(ehAnulada || foiConfirmada)
                 ? `<button class="btn btn-primary" onclick="proximaQuestao()">${current.index === current.questoes.length - 1 ? 'Finalizar' : 'Próxima questão'}</button>`
                 : `<button class="btn btn-primary" ${current.selected ? '' : 'disabled'} onclick="confirmarResposta()">Confirmar resposta</button>`}
               <button class="btn btn-outline" onclick="refazerProva('${prova.id}')">Refazer prova</button>
@@ -655,7 +933,7 @@
     function selecionar(alt) {
       const prova = getProva(current.provaId);
       const q = current.questoes[current.index];
-      if (!prova || confirmed(prova, q)) return;
+      if (!prova || confirmed(prova, q) || anulada(prova, q)) return;
       current.selected = alt;
       renderQuestao();
     }
@@ -709,7 +987,8 @@
         certas: r.certas,
         erradas: r.erradas,
         rever: r.rever,
-        pendentes: r.pendentes
+        pendentes: r.pendentes,
+        anuladas: r.anuladas
       };
       const ativa = filtros[filtro] || filtros.todas;
       const setAtivo = new Set(ativa.map(Number));
@@ -723,6 +1002,7 @@
           let cls = 'q-tile pending';
           if (r.certas.includes(n)) cls = 'q-tile right';
           if (r.erradas.includes(n)) cls = 'q-tile wrong';
+          if (r.anuladas.includes(n)) cls = 'q-tile null';
           if (marked(prova, n)) cls += ' marked';
           tiles.push(`<button class="${cls}" onclick="abrirQuestao('${prova.id}', ${n})">${n}</button>`);
         }
@@ -739,9 +1019,11 @@
           <div class="stats">
             <div class="stat"><div class="stat-value">${r.acertos}</div><div class="stat-label">Acertadas</div></div>
             <div class="stat"><div class="stat-value">${r.erros}</div><div class="stat-label">Erradas</div></div>
-            <div class="stat"><div class="stat-value">${r.rever.length}</div><div class="stat-label">Para rever</div></div>
+            <div class="stat"><div class="stat-value">${r.anuladas.length}</div><div class="stat-label">Anuladas</div></div>
             <div class="stat"><div class="stat-value">${r.percentual}%</div><div class="stat-label">Desempenho</div></div>
           </div>
+
+          ${graficoDesempenho(r)}
 
           <div class="tabs">
             <button class="tab ${filtro === 'todas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'todas')">Todas</button>
@@ -749,6 +1031,7 @@
             <button class="tab ${filtro === 'erradas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'erradas')">Erradas</button>
             <button class="tab ${filtro === 'rever' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'rever')">Rever</button>
             <button class="tab ${filtro === 'pendentes' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'pendentes')">Pendentes</button>
+            <button class="tab ${filtro === 'anuladas' ? 'active' : ''}" onclick="renderResultado('${prova.id}', 'anuladas')">Anuladas</button>
           </div>
 
           <div class="matrix">${grupos.join('')}</div>
@@ -811,6 +1094,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      applyTheme(getTheme());
       load();
       renderHome();
     });
